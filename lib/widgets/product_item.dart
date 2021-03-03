@@ -39,8 +39,28 @@ class ProductItem extends StatelessWidget {
                 product.isFavourite ? Icons.favorite : Icons.favorite_border,
                 color: Theme.of(context).accentColor,
               ),
-              onPressed: () {
-                product.toggleFavoriteStatus();
+              onPressed: () async {
+                try {
+                  await product.toggleFavoriteStatus();
+                } catch (error) {
+                  showDialog(
+                      context: context,
+                      builder: (context) {
+                        Future.delayed(Duration(seconds: 3), () {
+                          Navigator.of(context).pop();
+                        });
+                        return AlertDialog(
+                          title: product.isFavourite
+                              ? Text('Disliking this item failed!')
+                              : Text('Making this item favorite failed!'),
+                          content: Center(
+                            child: Text(
+                              error.toString(),
+                            ),
+                          ),
+                        );
+                      });
+                }
               },
             ),
           ),

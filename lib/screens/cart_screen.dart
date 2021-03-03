@@ -6,6 +6,7 @@ import '../providers/orders.dart';
 
 class CartScreen extends StatelessWidget {
   static const routeName = '/cart';
+  var _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -37,17 +38,7 @@ class CartScreen extends StatelessWidget {
                     ),
                     backgroundColor: Theme.of(context).backgroundColor,
                   ),
-                  FlatButton(
-                    onPressed: () {
-                      Provider.of<Orders>(context, listen: false).addOrder(
-                        cart.items.values.toList(),
-                        cart.totalAmount,
-                      );
-                      cart.clearCart();
-                    },
-                    child: Text('ORDER NOW'),
-                    textColor: Theme.of(context).primaryColor,
-                  )
+                  OrderButton(cart: cart)
                 ],
               ),
             ),
@@ -68,6 +59,68 @@ class CartScreen extends StatelessWidget {
           )
         ],
       ),
+    );
+  }
+}
+
+class OrderButton extends StatefulWidget {
+  const OrderButton({
+    Key key,
+    @required this.cart,
+  }) : super(key: key);
+
+  final Cart cart;
+
+  @override
+  _OrderButtonState createState() => _OrderButtonState();
+}
+
+class _OrderButtonState extends State<OrderButton> {
+  var _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return FlatButton(
+      onPressed: (widget.cart.totalAmount <= 0 || _isLoading)
+          ? null
+          : () async {
+              setState(() {
+                _isLoading = true;
+              });
+              try {
+                await Provider.of<Orders>(context, listen: false).addOrder(
+                  widget.cart.items.values.toList(),
+                  widget.cart.totalAmount,
+                );
+                setState(() {
+                  _isLoading = false;
+                });
+                widget.cart.clearCart();
+              } catch (error) {
+                setState(() {
+                  _isLoading = false;
+                });
+                await showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text('An error occurred!'),
+                    content: Text(
+                      error.toString(),
+                    ),
+                    actions: [
+                      FlatButton(
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                        },
+                        child: Text('Okay'),
+                      )
+                    ],
+                  ),
+                );
+              }
+            },
+      child: _isLoading ? CircularProgressIndicator() : Text('ORDER NOW'),
+      textColor: Theme.of(context).primaryColor,
     );
   }
 }
